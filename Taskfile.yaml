@@ -1,0 +1,16 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - echo "Building firecracker-land binary..."
+      - go build --tags netgo --ldflags '-s -w -extldflags "-lm -lstdc++ -static"' -o bin *.go
+      - echo "Done!"
+    silent: true
+  run:
+    cmds:
+      - echo "Running firecracker-land binary..."
+      - ./bin
+    silent: true

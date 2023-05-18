@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/firecracker-microvm/firecracker-go-sdk v1.0.0
+	github.com/go-chi/chi v1.5.4
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
