@@ -2,15 +2,36 @@
 
 version: '3'
 
+silent: true
+
 tasks:
   build:
     cmds:
       - echo "Building firecracker-land binary..."
       - go build --tags netgo --ldflags '-s -w -extldflags "-lm -lstdc++ -static"' -o bin *.go
       - echo "Done!"
-    silent: true
   run:
     cmds:
       - echo "Running firecracker-land binary..."
       - ./bin
-    silent: true
+  clean:
+    cmds:
+      - echo "Cleaning up..."
+      - rm -rf bin
+      - rm -rf vmlinux.bin
+      - echo "Done!"
+  pull-kernel:
+    cmds:
+      - echo "Pulling the kernel..."
+      - arch=$(uname -m)
+      - if [ ! -f "$PWD/vmlinux.bin" ]; 
+          then 
+            echo "Kernel does not exist! Downloading...";
+            wget "https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/$(arch)/kernels/vmlinux.bin";
+        else
+          echo "Kernel already exists!";
+        fi
+      - echo "Done!"
+
+    
+  
