@@ -32,8 +32,8 @@ func createRequestHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := uuid()
 	resp := CreateResponse{
-		IpAddress: opts.FcIP,
-		ID:        id,
+		IpAddr: opts.FcIP,
+		ID:     id,
 	}
 
 	response, err := json.Marshal(&resp)
@@ -43,7 +43,7 @@ func createRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.Write(response)
 
-	runningVMs[id] = *running
+	runVms[id] = *running
 
 	go func() {
 		defer running.cancelCtx()

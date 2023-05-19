@@ -1,3 +1,6 @@
 *.ext4
+*.bin
 /sample
 /bin
+/utils
+

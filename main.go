@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var runningVMs map[string]RunningFirecracker = make(map[string]RunningFirecracker)
+var runVms map[string]Firecracker = make(map[string]Firecracker)
 var ipByte byte = 3
 
 func main() {
