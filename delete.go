@@ -22,10 +22,10 @@ func deleteRequestHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("error during reading passed request body: %v", err.Error())
 	}
 
-	running := runningVMs[in.ID]
+	running := runVms[in.ID]
 
 	running.machine.StopVMM()
 	running.cancelCtx()
 
-	delete(runningVMs, in.ID)
+	delete(runVms, in.ID)
 }

@@ -15,13 +15,13 @@ func getOptions(id byte, req CreateRequest) options {
 	bootArgs := "ro console=ttyS0 noapic reboot=k panic=1 pci=off nomodules random.trust_cpu=on "
 	bootArgs = bootArgs + fmt.Sprintf("ip=%s::%s:%s::eth0:off", fc_ip, gateway_ip, docker_mask_long)
 	return options{
-		FcBinary:         "firecracker",
-		FcKernelImage:    req.KernelPath,
-		FckernelBootArgs: bootArgs,
-		FcRootDrivePath:  req.RootDrivePath,
-		FcSocketPath:     fmt.Sprintf("/tmp/firecracker-ip%d.sock", id),
-		TapMacAddr:       fmt.Sprintf("02:FC:00:00:00:%02x", id),
-		TapDev:           fmt.Sprintf("fc-tap-%d", id),
+		FcBinary:       "firecracker",
+		FcKernelImage:  "vmlinux.bin",
+		KernelBootArgs: bootArgs,
+		RootFsImage:    req.RootFsImg,
+		ApiSocket:      fmt.Sprintf("/tmp/firecracker-ip%d.sock", id),
+		TapMacAddr:     fmt.Sprintf("02:FC:00:00:00:%02x", id),
+		Tap:            fmt.Sprintf("fc-tap-%d", id),
 		// TapDev:     "tap0",
 		FcIP:       fc_ip,
 		IfName:     "enp7s0", // eth0
@@ -33,13 +33,13 @@ func getOptions(id byte, req CreateRequest) options {
 func (opts *options) getConfig() firecracker.Config {
 	return firecracker.Config{
 		VMID:            opts.Id,
-		SocketPath:      opts.FcSocketPath,
+		SocketPath:      opts.ApiSocket,
 		KernelImagePath: opts.FcKernelImage,
-		KernelArgs:      opts.FckernelBootArgs,
+		KernelArgs:      opts.KernelBootArgs,
 		Drives: []models.Drive{
 			{
 				DriveID:      firecracker.String("1"),
-				PathOnHost:   &opts.FcRootDrivePath,
+				PathOnHost:   &opts.RootFsImage,
 				IsRootDevice: firecracker.Bool(true),
 				IsReadOnly:   firecracker.Bool(false),
 				//Partuuid:     opts.FcRootPartUUID,
@@ -51,7 +51,7 @@ func (opts *options) getConfig() firecracker.Config {
 			{
 				StaticConfiguration: &firecracker.StaticNetworkConfiguration{
 					MacAddress:  opts.TapMacAddr,
-					HostDevName: opts.TapDev,
+					HostDevName: opts.Tap,
 				},
 				// AllowMMDS: true,
 			},
