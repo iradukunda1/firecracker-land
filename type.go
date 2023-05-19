@@ -8,7 +8,7 @@ import (
 )
 
 type CreateRequest struct {
-	RootFsImg string `json:"root_filesystem_image" validate:"required"`
+	RootFsImg string `json:"rootfs" validate:"required"`
 }
 
 type CreateResponse struct {
