@@ -15,18 +15,20 @@ func getOptions(id byte, req CreateRequest) options {
 	bootArgs := "ro console=ttyS0 noapic reboot=k panic=1 pci=off nomodules random.trust_cpu=on "
 	bootArgs = bootArgs + fmt.Sprintf("ip=%s::%s:%s::eth0:off", fc_ip, gateway_ip, docker_mask_long)
 	return options{
+		VmIndex:        int64(id),
 		FcBinary:       "firecracker",
-		FcKernelImage:  "vmlinux.bin",
+		FcKernelImage:  "vmlinux.bin", // make sure that this file exists in the current directory with valid sum5
 		KernelBootArgs: bootArgs,
-		RootFsImage:    req.RootFsImg,
+		ProvidedImage:  req.DockerImage,
 		ApiSocket:      fmt.Sprintf("/tmp/firecracker-ip%d.sock", id),
 		TapMacAddr:     fmt.Sprintf("02:FC:00:00:00:%02x", id),
 		Tap:            fmt.Sprintf("fc-tap-%d", id),
 		// TapDev:     "tap0",
-		FcIP:       fc_ip,
-		IfName:     "enp7s0", // eth0
-		FcCPUCount: 1,
-		FcMemSz:    512,
+		InitBaseTar: "rootfs.tar",
+		FcIP:        fc_ip,
+		IfName:      "enp7s0", // eth0
+		FcCPUCount:  1,
+		FcMemSz:     512,
 	}
 }
 

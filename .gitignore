@@ -3,4 +3,5 @@
 /sample
 /bin
 /utils
-
+*.img
+*.tar

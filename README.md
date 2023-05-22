@@ -35,20 +35,26 @@ Before running this project, ensure that you have the following dependencies ins
    task run
 ```
 
+5. Run below command to generate our customer init tar file
+
+   ```
+   task extract-init-base-tar
+   ```
+
 The application will start running on `localhost:8080`.
 
 ## Available Endpoints
 
 The following endpoints are available for interacting with the application:
 
-* `/api/create`: This endpoint is used to create a new VM. It expects the location of the rootfs image as input.
+* `/api/create`: This endpoint is used to create a new VM. It expects the location or name of you docker container image as input and name.
 * `/api/delete`: This endpoint is used to delete a VM. It requires the VM ID to be provided as the request body.
 
 1. Create a VM using `/api/create`:
 
    ```
 
-   curl -X POST -H "Content-Type: application/json" -d '{"rootfs": "/path/to/rootfs.img"}' http://localhost:8080/api/create
+   curl -X POST -H "Content-Type: application/json" -d '{"docker-image": "Docker container name","name":"my-hello-vm"}' http://localhost:8080/api/create
 
    ```
 
