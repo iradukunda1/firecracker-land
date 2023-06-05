@@ -59,4 +59,5 @@ tasks:
       - find . -print0 | cpio --null --create --verbose --format=newc > ../../initrd.cpio
       - cd ..
       - rm -rf tmp
+      - rm -rf initrd
       - echo "Done!"
