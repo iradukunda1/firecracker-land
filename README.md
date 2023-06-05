@@ -35,10 +35,10 @@ Before running this project, ensure that you have the following dependencies ins
    task run
 ```
 
-5. Run below command to generate our customer init tar file
+5. Run below command to generate init process and initrd
 
    ```
-   task extract-init-base-tar
+   task gen-init && task gen-initrd
    ```
 
 The application will start running on `localhost:8080`.

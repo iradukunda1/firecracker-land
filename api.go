@@ -9,11 +9,11 @@ import (
 func handler() http.Handler {
 	r := chi.NewRouter()
 
-	//Create vm instance
-	r.Post("/create", createVmHandler)
-
-	//Delete vm instance
-	r.Delete("/delete", deleteVmHandler)
+	r.Post("/create", CreateVmHandler)
+	r.Delete("/delete", DeleteVmHandler)
+	r.Post("/stop", StopVmHandler)
+	r.Post("/resume", ResumeVmHandler)
+	r.Get("/list", ListVmsHandler)
 
 	return r
 }

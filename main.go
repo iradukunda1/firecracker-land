@@ -12,9 +12,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var runVms map[string]Firecracker = make(map[string]Firecracker)
-var ipByte byte = 3
-
 func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -51,7 +48,7 @@ func main() {
 
 	// for killing all running VMs
 	defer func() {
-		cleanup()
+		Cleanup()
 		cancel()
 	}()
 
