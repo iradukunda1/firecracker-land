@@ -29,17 +29,18 @@ Before running this project, ensure that you have the following dependencies ins
 ```
 
    this will generate an executable binary file in the project's root directory.
-4. Run the project using the `run` task:
+
+4. Run below command to generate init process and initrd
+
+```
+task gen-init && task gen-initrd
+```
+
+5. Run the project using the `run` task:
 
 ```
    task run
 ```
-
-5. Run below command to generate init process and initrd
-
-   ```
-   task gen-init && task gen-initrd
-   ```
 
 The application will start running on `localhost:8080`.
 
