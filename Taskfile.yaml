@@ -22,6 +22,10 @@ tasks:
       - echo "Cleaning up..."
       - rm -rf bin
       - rm -rf vmlinux.bin
+      - rm -rf init
+      - rm -rf initrd.cpio
+      - rm -rf *.img
+      - rm -rf *.ext4
       - echo "Done!"
   pull-kernel:
     desc: "Pulls the kernel from the S3 bucket"
@@ -36,21 +40,23 @@ tasks:
           echo "Kernel already exists!";
         fi
       - echo "Done!"
-  extract-init-base-tar:
-    desc: "Extract init base tar..."
+  gen-init:
+    desc: "Builds the init binary"
     cmds:
-      - echo "Extract for extracting rootfs process from docker image..."
-      - docker build -t drop/custom-init .
-      - echo "Done Building!"
-      - echo "Starting extraction process..."
-      - docker rm -f custom-init
-      - rm -rf rootfs.tar
-      - docker create --name custom-init drop/custom-init
-      - docker export custom-init -o rootfs.tar
-      - docker rm -f custom-init
-      - echo "Done Extraction!"
-
-
-
-    
+      - echo "Building init binary..."
+      - go build --tags netgo --ldflags '-s -w -extldflags "-lm -lstdc++ -static"' -o init cmd/init/main.go
+      - echo "Done!"
   
+  gen-initrd:
+    dir: ./cmd/initrd
+    desc: "Builds the initrd"
+    cmds:
+      - echo "Generating initrd..."
+      - go build -tags netgo
+      - mkdir -p tmp
+      - cp initrd tmp/init
+      - cd tmp
+      - find . -print0 | cpio --null --create --verbose --format=newc > ../../initrd.cpio
+      - cd ..
+      - rm -rf tmp
+      - echo "Done!"

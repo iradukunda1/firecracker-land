@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// generateRFs generates root filesystem for the VM according to the below steps:
+// GenerateRFs generates root filesystem for the VM according to the below steps:
 // 1. create a directory for the rootfs
 // 2. copy the init binary to the rootfs
 // 3. copy the init base tar file to the rootfs
@@ -17,11 +17,11 @@ import (
 // 7. delete the init base tar file
 // 8. delete the docker supplied tar file
 // 9. return the rootfs path
-func (o *options) generateRFs(name string) (string, error) {
+func (o *options) GenerateRFs(name string) (string, error) {
 
 	fsName := fmt.Sprintf("%d-%s.ext4", o.VmIndex, name)
 
-	// for creating the rootfs directory with 1GB size
+	// for creating the rootfs directory with 526MB size
 	if _, err := RunSudo(fmt.Sprintf("fallocate -l 526MB %s", fsName)); err != nil {
 		return "", fmt.Errorf("failed to create rootfs file: %v", err)
 	}
@@ -38,14 +38,12 @@ func (o *options) generateRFs(name string) (string, error) {
 	}
 	defer os.RemoveAll(tmpDir)
 
+	// unmout the created tmp dir from rootfs file
+	defer RunSudo(fmt.Sprintf("umount %s", tmpDir))
+
 	//for mounting the created rootfs file to tmp directory
 	if _, err := RunSudo(fmt.Sprintf("mount -o loop %s %s", fsName, tmpDir)); err != nil {
 		return "", fmt.Errorf("failed to mount rootfs file: %v", err)
-	}
-
-	// for extracting the init base tar file to the rootfs directory
-	if _, err := RunSudo(fmt.Sprintf("tar -xvf %s -C %s", o.InitBaseTar, tmpDir)); err != nil {
-		return "", fmt.Errorf("failed to extract init base tar file: %v", err)
 	}
 
 	imageTar := fmt.Sprintf("%d-%s.tar", o.VmIndex, name)
@@ -71,9 +69,14 @@ func (o *options) generateRFs(name string) (string, error) {
 		return "", fmt.Errorf("failed to extract docker supplied tar file: %v", err)
 	}
 
-	// unmout the created tmp dir from rootfs file
-	if _, err := RunSudo(fmt.Sprintf("umount %s", tmpDir)); err != nil {
-		return "", fmt.Errorf("failed to unmount rootfs file: %v", err)
+	// for extracting the docker supplied tar file to the rootfs directory
+	if _, err := RunSudo(fmt.Sprintf("cp -r init %s", tmpDir)); err != nil {
+		return "", fmt.Errorf("failed to cp init to tmp dir: %v", err)
+	}
+
+	//remove those created ext and tar files
+	if _, err := RunNoneSudo(fmt.Sprintf("rm -f %s", imageTar)); err != nil {
+		return "", fmt.Errorf("failed to remove ext and tar files: %v", err)
 	}
 
 	return fsName, nil

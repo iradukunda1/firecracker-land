@@ -1,0 +1,31 @@
+{
+  "boot-source": {
+    "kernel_image_path": "vmlinux.bin",
+    "boot_args": "ro console=ttyS0 noapic reboot=k panic=1 init=init  pci=off nomodules random.trust_cpu=on ip=172.17.0.21::172.17.0.1:255.255.255.0::eth0:off",
+    "initrd_path":"initrd.cpio"
+  },
+  "drives": [
+    {
+      "drive_id": "rootfs",
+      "path_on_host": "4-rust-http-example.ext4",
+      "is_root_device": true,
+      "is_read_only": false
+    }
+  ],
+  "network-interfaces": [
+      {
+          "iface_id": "eth0",
+          "guest_mac": "02:FC:00:00:00:05",
+          "host_dev_name": "fc-tap-5"
+      }
+  ],
+  "machine-config": {
+    "vcpu_count": 1,
+    "mem_size_mib": 506
+  },
+ "balloon": {
+    "amount_mib": 0,
+    "deflate_on_oom": false,
+    "stats_polling_interval_s": 1
+  }
+}
