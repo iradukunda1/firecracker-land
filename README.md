@@ -8,6 +8,7 @@ Before running this project, ensure that you have the following dependencies ins
 
 * Go: [Installation Guide](https://golang.org/doc/install)
 * Task: [Installation Guide](https://taskfile.dev/#/installation)
+* Firecracker & Jailer binary: [Installation Guide](https://github.com/firecracker-microvm/firecracker#getting-started)
 
 ## Getting Started
 

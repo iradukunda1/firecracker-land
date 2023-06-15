@@ -13,7 +13,7 @@ import (
 func getOptions(id byte, req CreateRequest) options {
 	fc_ip := net.IPv4(172, 102, 0, id).String()
 	gateway_ip := "172.102.0.1"
-	mask_long := "255.255.255.0" // reboot=k panic=1 pci=off init=/init ip=172.16.0.2::172.16.0.1:255.255.255.0::eth0:off root=/dev/vda"
+	mask_long := "255.255.255.0"
 	bootArgs := "ro console=ttyS0 noapic reboot=k panic=1 earlycon pci=off init=init nomodules random.trust_cpu=on tsc=reliable quiet "
 	bootArgs = bootArgs + fmt.Sprintf("ip=%s::%s:%s::eth0:off", fc_ip, gateway_ip, mask_long)
 	return options{
@@ -22,16 +22,13 @@ func getOptions(id byte, req CreateRequest) options {
 		FcKernelImage:  "vmlinux.bin", // make sure that this file exists in the current directory with valid sum5
 		KernelBootArgs: bootArgs,
 		ProvidedImage:  req.DockerImage,
-		// ApiSocket:      fmt.Sprintf("/tmp/firecracker-ip%d.socket", id),
-		TapMacAddr: fmt.Sprintf("02:FC:00:00:00:%02x", id),
-		Tap:        fmt.Sprintf("fc-tap-%d", id),
-		// TapDev:     "tap0",
-		// InitBaseTar: "rootfs.tar",
-		FcIP:       fc_ip,
-		BackBone:   "enp0s25", // eth0 or enp7s0,enp0s25
-		FcCPUCount: 1,
-		FcMemSz:    256,
-		Logger:     log.New(),
+		TapMacAddr:     fmt.Sprintf("02:FC:00:00:00:%02x", id),
+		Tap:            fmt.Sprintf("fc-tap-%d", id),
+		FcIP:           fc_ip,
+		BackBone:       "enp0s25", // eth0 or enp7s0,enp0s25
+		FcCPUCount:     1,
+		FcMemSz:        256,
+		Logger:         log.New(),
 	}
 }
 
@@ -50,7 +47,6 @@ func (opts *options) getConfig() firecracker.Config {
 				PathOnHost:   &opts.RootFsImage,
 				IsRootDevice: firecracker.Bool(true),
 				IsReadOnly:   firecracker.Bool(false),
-				//Partuuid:     opts.FcRootPartUUID,
 			},
 		},
 
@@ -67,11 +63,6 @@ func (opts *options) getConfig() firecracker.Config {
 
 		//for specifying the number of cpus and memory
 		MachineCfg: models.MachineConfiguration{
-			// VcpuCount:  &opts.FcCPUCount,
-			// MemSizeMib: &opts.FcMemSz,
-			// CPUTemplate: models.CPUTemplate(opts.FcCPUTemplate),
-			// HtEnabled: firecracker.Bool(false),
-
 			VcpuCount:  firecracker.Int64(1),
 			Smt:        firecracker.Bool(false),
 			MemSizeMib: firecracker.Int64(256),
