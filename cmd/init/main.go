@@ -14,6 +14,8 @@ import (
 
 const paths = "PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
 
+var host = "drop-vm"
+
 // main starts an init process that can prepare an environment and start a shell
 // after the Kernel has started.
 func main() {
@@ -26,7 +28,7 @@ func main() {
 	mount("none", "/sys", "sysfs", 0)
 	mount("none", "/sys/fs/cgroup", "cgroup", 0)
 
-	setHostname("drop-vm")
+	setHostname(host)
 
 	fmt.Printf("Drop starting /bin/sh\n")
 
@@ -46,6 +48,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("could not wait for /bin/sh, error: %s", err))
 	}
+
 }
 
 // setHostname sets the hostname of the VM
