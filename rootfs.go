@@ -16,18 +16,18 @@ import (
 // 6. extract the docker supplied tar file
 // 7. delete the init base tar file
 // 8. delete the docker supplied tar file
-// 9. return the rootfs path
+// 9. return the rootfs path or name
 func (o *options) GenerateRFs(name string) (string, error) {
 
 	fsName := fmt.Sprintf("%d-%s.ext4", o.VmIndex, name)
 
 	// for creating the rootfs directory with 526MB size
-	if _, err := RunSudo(fmt.Sprintf("fallocate -l 526MB %s", fsName)); err != nil {
+	if _, err := RunNoneSudo(fmt.Sprintf("fallocate -l 526MB %s", fsName)); err != nil {
 		return "", fmt.Errorf("failed to create rootfs file: %v", err)
 	}
 
 	//for making the rootfs file as ext4 file system
-	if _, err := RunSudo(fmt.Sprintf("mkfs.ext4 %s", fsName)); err != nil {
+	if _, err := RunNoneSudo(fmt.Sprintf("mkfs.ext4 %s", fsName)); err != nil {
 		return "", fmt.Errorf("failed to create ext4 file system: %v", err)
 	}
 
@@ -53,15 +53,11 @@ func (o *options) GenerateRFs(name string) (string, error) {
 	if _, err := RunNoneSudo(fmt.Sprintf("docker create --name %s %s", imageName, o.ProvidedImage)); err != nil {
 		return "", fmt.Errorf("failed to export docker tar file: %v", err)
 	}
+	defer RunNoneSudo(fmt.Sprintf("docker rm -f %s", imageName))
 
 	// for exporting the docker tar file from supplied docker image
 	if _, err := RunNoneSudo(fmt.Sprintf("docker export %s -o %s", imageName, imageTar)); err != nil {
 		return "", fmt.Errorf("failed to export docker tar file: %v", err)
-	}
-
-	//remove docker extracted name
-	if _, err := RunNoneSudo(fmt.Sprintf("docker rm -f %s", imageName)); err != nil {
-		return "", fmt.Errorf("failed to remove docker extracted name: %v", err)
 	}
 
 	// for extracting the docker supplied tar file to the rootfs directory
@@ -69,7 +65,7 @@ func (o *options) GenerateRFs(name string) (string, error) {
 		return "", fmt.Errorf("failed to extract docker supplied tar file: %v", err)
 	}
 
-	// for extracting the docker supplied tar file to the rootfs directory
+	// include our init process into ext4 file system exported from docker
 	if _, err := RunSudo(fmt.Sprintf("cp -r init %s", tmpDir)); err != nil {
 		return "", fmt.Errorf("failed to cp init to tmp dir: %v", err)
 	}

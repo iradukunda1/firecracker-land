@@ -3,16 +3,18 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/firecracker-microvm/firecracker-go-sdk/client/models"
+	log "github.com/sirupsen/logrus"
 )
 
 func getOptions(id byte, req CreateRequest) options {
 	fc_ip := net.IPv4(172, 102, 0, id).String()
 	gateway_ip := "172.102.0.1"
 	mask_long := "255.255.255.0" // reboot=k panic=1 pci=off init=/init ip=172.16.0.2::172.16.0.1:255.255.255.0::eth0:off root=/dev/vda"
-	bootArgs := "ro console=ttyS0 noapic reboot=k panic=1 earlycon pci=off init=init nomodules random.trust_cpu=on "
+	bootArgs := "ro console=ttyS0 noapic reboot=k panic=1 earlycon pci=off init=init nomodules random.trust_cpu=on tsc=reliable quiet "
 	bootArgs = bootArgs + fmt.Sprintf("ip=%s::%s:%s::eth0:off", fc_ip, gateway_ip, mask_long)
 	return options{
 		VmIndex:        int64(id),
@@ -20,19 +22,21 @@ func getOptions(id byte, req CreateRequest) options {
 		FcKernelImage:  "vmlinux.bin", // make sure that this file exists in the current directory with valid sum5
 		KernelBootArgs: bootArgs,
 		ProvidedImage:  req.DockerImage,
-		ApiSocket:      fmt.Sprintf("/tmp/firecracker-ip%d.socket", id),
-		TapMacAddr:     fmt.Sprintf("02:FC:00:00:00:%02x", id),
-		Tap:            fmt.Sprintf("fc-tap-%d", id),
+		// ApiSocket:      fmt.Sprintf("/tmp/firecracker-ip%d.socket", id),
+		TapMacAddr: fmt.Sprintf("02:FC:00:00:00:%02x", id),
+		Tap:        fmt.Sprintf("fc-tap-%d", id),
 		// TapDev:     "tap0",
 		// InitBaseTar: "rootfs.tar",
 		FcIP:       fc_ip,
 		BackBone:   "enp0s25", // eth0 or enp7s0,enp0s25
 		FcCPUCount: 1,
 		FcMemSz:    256,
+		Logger:     log.New(),
 	}
 }
 
 func (opts *options) getConfig() firecracker.Config {
+
 	return firecracker.Config{
 		VMID:            opts.Id,
 		SocketPath:      opts.ApiSocket,
@@ -73,7 +77,20 @@ func (opts *options) getConfig() firecracker.Config {
 			MemSizeMib: firecracker.Int64(256),
 		},
 
-		// JailerCfg: jail,
+		JailerCfg: &firecracker.JailerConfig{
+			UID:            firecracker.Int(1),
+			GID:            firecracker.Int(1),
+			NumaNode:       firecracker.Int(0),
+			Daemonize:      true,
+			ExecFile:       "/usr/bin/" + opts.FcBinary,
+			JailerBinary:   "jailer",
+			ChrootBaseDir:  "/tmp",
+			CgroupVersion:  "1",
+			Stdout:         opts.Logger.WithField("vmm_stream", "stdout").WriterLevel(log.DebugLevel),
+			Stderr:         opts.Logger.WithField("vmm_stream", "stderr").WriterLevel(log.DebugLevel),
+			Stdin:          os.Stdin,
+			ChrootStrategy: firecracker.NewNaiveChrootStrategy("vmlinux.bin"),
+		},
 		//VsockDevices:      vsocks,
 		//LogFifo:           opts.FcLogFifo,
 		//LogLevel:          opts.FcLogLevel,

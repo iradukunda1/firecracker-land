@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
-	log "github.com/sirupsen/logrus"
+	llg "github.com/sirupsen/logrus"
 )
 
 type Firecracker struct {
@@ -37,13 +40,30 @@ type options struct {
 	InitBaseTar   string `long:"init-base-tar" description:"init-base-tar is our init base image file"`                                                                                                   // make sure that this file is currently exists in the current directory by running task extract-init-base-tar
 	ProvidedImage string `long:"provided-image" description:"provided-image is the image that we want to run in the VM"`
 	InitdPath     string `long:"initd-path" description:"initd-path is the path to the init binary file"`
+	Logger        *llg.Logger
+}
+
+// JailingFirecrackerConfig represents Jailerspecific configuration options.
+type JailingFirecrackerConfig struct {
+	sync.Mutex
+
+	BinaryFirecracker string `json:"BinaryFirecracker" mapstructure:"BinaryFirecracker"`
+	BinaryJailer      string `json:"BinaryJailer" mapstructure:"BinaryJailer"`
+	ChrootBase        string `json:"ChrootBase" mapstructure:"ChrootBase"`
+
+	JailerGID      int `json:"JailerGid" mapstructure:"JailerGid"`
+	JailerNumeNode int `json:"JailerNumaNode" mapstructure:"JailerNumaNode"`
+	JailerUID      int `json:"JailerUid" mapstructure:"JailerUid"`
+
+	NetNS string `json:"NetNS" mapstructure:"NetNS"`
+
+	VmmID string
 }
 
 func installSignalHandlers(ctx context.Context, m *firecracker.Machine) {
 
-	lg := log.New()
+	log := llg.New()
 
-	// not sure if this is actually really helping with anything
 	go func() {
 		// Clear some default handlers installed by the firecracker SDK:
 		signal.Reset(os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
@@ -53,11 +73,25 @@ func installSignalHandlers(ctx context.Context, m *firecracker.Machine) {
 		for {
 			switch s := <-c; {
 			case s == syscall.SIGTERM || s == os.Interrupt:
-				lg.Printf("Caught SIGINT, requesting clean shutdown")
-				m.Shutdown(ctx)
+				fmt.Println("Caught SIGTERM, requesting clean shutdown")
+				if err := m.Shutdown(ctx); err != nil {
+					log.Errorf("Machine shutdown failed with error: %v", err)
+				}
+				time.Sleep(20 * time.Second)
+
+				// There's no direct way of checking if a VM is running, so we test if we can send it another shutdown
+				// request. If that fails, the VM is still running and we need to kill it.
+				if err := m.Shutdown(ctx); err == nil {
+					fmt.Println("Timeout exceeded, forcing shutdown") // TODO: Proper logging
+					if err := m.StopVMM(); err != nil {
+						log.Errorf("VMM stop failed with error: %v", err)
+					}
+				}
 			case s == syscall.SIGQUIT:
-				lg.Printf("Caught SIGTERM, forcing shutdown")
-				m.StopVMM()
+				fmt.Println("Caught SIGQUIT, forcing shutdown")
+				if err := m.StopVMM(); err != nil {
+					log.Errorf("VMM stop failed with error: %v", err)
+				}
 			}
 		}
 	}()

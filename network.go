@@ -5,7 +5,7 @@ import "fmt"
 func (o *options) SetNetwork() error {
 
 	// delete tap device if it exists
-	if res, err := RunNoneSudo(fmt.Sprintf("ip link del %s 2> /dev/null || true", o.Tap)); res != 1 && err != nil {
+	if res, err := RunSudo(fmt.Sprintf("ip link del %s 2> /dev/null || true", o.Tap)); res != 1 && err != nil {
 		return fmt.Errorf("failed during deleting tap device: %v", err)
 	}
 
@@ -25,9 +25,9 @@ func (o *options) SetNetwork() error {
 	}
 
 	//set master bridge for tap device
-	if _, err := RunSudo(fmt.Sprintf("ip link set %s master docker0", o.Tap)); err != nil {
-		return fmt.Errorf("failed to set master bridge for tap device: %v", err)
-	}
+	// if _, err := RunSudo(fmt.Sprintf("ip link set %s master docker0", o.Tap)); err != nil {
+	// 	return fmt.Errorf("failed to set master bridge for tap device: %v", err)
+	// }
 
 	if _, err := RunSudo(fmt.Sprintf("sysctl -w net.ipv4.conf.%s.proxy_arp=1", o.Tap)); err != nil {
 		return fmt.Errorf("failed doing first sysctl: %v", err)
