@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/exec"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	log "github.com/sirupsen/logrus"
@@ -22,14 +20,14 @@ func (o *options) createVMM(ctx context.Context, id string) (*Firecracker, error
 	fcCfg := o.getConfig()
 
 	// if fcCfg.JailerCfg == nil {
-	_ = firecracker.VMCommandBuilder{}.
-		WithBin(o.FcBinary).
-		WithSocketPath(fcCfg.SocketPath).
-		WithArgs([]string{"--id", id}).
-		WithStdin(os.Stdin).
-		WithStdout(os.Stdout).
-		WithStderr(os.Stderr).
-		Build(ctx)
+	// _ = firecracker.VMCommandBuilder{}.
+	// 	WithBin(o.FcBinary).
+	// 	WithSocketPath(fcCfg.SocketPath).
+	// 	WithArgs([]string{"--id", id}).
+	// 	WithStdin(os.Stdin).
+	// 	WithStdout(os.Stdout).
+	// 	WithStderr(os.Stderr).
+	// 	Build(ctx)
 	// }
 
 	// client := firecracker.NewClient(fcCfg.SocketPath, llg.WithContext(vmmCtx), true)
@@ -56,46 +54,49 @@ func (o *options) createVMM(ctx context.Context, id string) (*Firecracker, error
 		return nil, fmt.Errorf("failed to set network: %s", err)
 	}
 
-	m, err := firecracker.NewMachine(vmCtx, fcCfg, machineOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed creating machine: %s", err)
-	}
-	defer m.StopVMM()
-
 	g := errgroup.Group{}
 
+	out := make(chan *firecracker.Machine)
+
 	g.Go(func() error {
-		if err = m.Start(vmCtx); err != nil {
+
+		machine, err := firecracker.NewMachine(vmCtx, fcCfg, machineOpts...)
+		if err != nil {
+			return fmt.Errorf("failed creating machine: %v", err)
+		}
+
+		if err = machine.Start(vmCtx); err != nil {
 			return fmt.Errorf("failed to start machine: %v", err)
 		}
+
+		out <- machine
+
 		return nil
 	})
+
+	m := <-out
+
 	defer m.StopVMM()
+
+	if g.Wait() != nil {
+		log.Fatalf("error during start and create vm %v", g.Wait())
+	}
+
+	go func() {
+		m.Wait(ctx)
+	}()
 
 	installSignalHandlers(vmCtx, m)
 
-	if err := m.Wait(ctx); err != nil {
-		log.Fatalf("failed to start machine during awaiting for vm health: %v", err)
-	}
+	// if err := m.Wait(ctx); err != nil {
+	// 	log.Fatalf("failed to start machine during awaiting for vm health: %v", err)
+	// }
 
-	return &Firecracker{
+	res := &Firecracker{
 		ctx:       vmCtx,
 		cancelCtx: vmCancel,
 		machine:   m,
-	}, nil
-}
-
-func (opt *options) jailerCommand(ctx context.Context, containerName string, isDebug bool) *exec.Cmd {
-
-	fc := opt.getConfig()
-
-	cmd := exec.CommandContext(ctx, fc.JailerCfg.JailerBinary, "run", containerName)
-	cmd.Dir = fc.JailerCfg.ChrootBaseDir
-
-	if isDebug {
-		cmd.Stdout = opt.Logger.WithField("vmm_stream", "stdout").WriterLevel(log.DebugLevel)
-		cmd.Stderr = opt.Logger.WithField("vmm_stream", "stderr").WriterLevel(log.DebugLevel)
 	}
 
-	return cmd
+	return res, nil
 }

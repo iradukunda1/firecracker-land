@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -30,17 +29,16 @@ func CreateVmHandler(w http.ResponseWriter, r *http.Request) {
 
 	opts := getOptions(ipByte, *in)
 
-	// opts.RootFsImage = in.DockerImage
-
 	opts.RootFsImage, err = opts.GenerateRFs(in.Name)
 	if err != nil {
 		log.Fatalf("failed to generate rootfs image, %s", err)
 	}
 
 	id := uuid()
-	m, err := opts.createVMM(context.Background(), id)
+
+	m, err := opts.createVMM(r.Context(), id)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("failed to start and create vm %v", err)
 	}
 
 	resp := CreateResponse{
@@ -58,28 +56,6 @@ func CreateVmHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 
 	runVms[id] = *m
-
-	// g := errgroup.Group{}
-
-	// g.Go(func() error {
-
-	// 	if err := m.machine.Start(m.ctx); err != nil {
-	// 		log.Fatalf("failed to start machine: %v", err)
-	// 	}
-	// 	defer m.cancelCtx()
-
-	// 	// there's an error here but we ignore it for now because we terminate
-	// 	// the VM on /delete and it returns an error when it's terminated
-	// 	if err := m.machine.Wait(m.ctx); err != nil {
-	// 		return err
-	// 	}
-
-	// 	return nil
-	// })
-
-	// if err := g.Wait(); err != nil {
-	// 	log.Fatalf("failed to start machine: %v", err)
-	// }
 
 }
 
