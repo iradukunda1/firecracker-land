@@ -14,10 +14,23 @@ import (
 	llg "github.com/sirupsen/logrus"
 )
 
+// vmState this kind of vm-machine status
+type VmState string
+
+// avaliable vmState kind status
+const (
+	StateCreated VmState = "created"
+	StateStarted VmState = "started"
+	StateFailed  VmState = "failed"
+	// StatePending VmState = "pending"
+)
+
 type Firecracker struct {
+	Name      string
 	ctx       context.Context
 	cancelCtx context.CancelFunc
-	machine   *firecracker.Machine
+	vm        *firecracker.Machine
+	state     VmState
 	Agent     net.IP
 }
 
@@ -99,6 +112,6 @@ func installSignalHandlers(ctx context.Context, m *firecracker.Machine) {
 
 func Cleanup() {
 	for _, run := range runVms {
-		run.machine.StopVMM()
+		run.vm.StopVMM()
 	}
 }

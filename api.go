@@ -14,6 +14,7 @@ func handler() http.Handler {
 	r.Post("/stop", StopVmHandler)
 	r.Post("/resume", ResumeVmHandler)
 	r.Get("/list", ListVmsHandler)
+	r.Get("/vm-state/{vm_id}", InfoVmHandler)
 
 	return r
 }

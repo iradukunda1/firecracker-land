@@ -3,17 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/sync/errgroup"
 )
+
+var duration = 60 * time.Second
 
 // CreateVmm is responsible to create vm and return its ip address
 func (o *options) createVMM(ctx context.Context, id string) (*Firecracker, error) {
 
-	vmCtx, vmCancel := context.WithCancel(ctx)
-	defer vmCancel()
+	vmCtx, _ := context.WithTimeout(ctx, duration)
+	// defer vmCancel()
 
 	llg := log.New()
 
@@ -54,37 +56,37 @@ func (o *options) createVMM(ctx context.Context, id string) (*Firecracker, error
 		return nil, fmt.Errorf("failed to set network: %s", err)
 	}
 
-	g := errgroup.Group{}
+	// g := errgroup.Group{}
 
-	out := make(chan *firecracker.Machine)
+	// out := make(chan *firecracker.Machine)
 
-	g.Go(func() error {
+	// g.Go(func() error {
 
-		machine, err := firecracker.NewMachine(vmCtx, fcCfg, machineOpts...)
-		if err != nil {
-			return fmt.Errorf("failed creating machine: %v", err)
-		}
-
-		if err = machine.Start(vmCtx); err != nil {
-			return fmt.Errorf("failed to start machine: %v", err)
-		}
-
-		out <- machine
-
-		return nil
-	})
-
-	m := <-out
-
-	defer m.StopVMM()
-
-	if g.Wait() != nil {
-		log.Fatalf("error during start and create vm %v", g.Wait())
+	m, err := firecracker.NewMachine(vmCtx, fcCfg, machineOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating machine: %v", err)
 	}
 
-	go func() {
-		m.Wait(ctx)
-	}()
+	// 	if err = machine.Start(vmCtx); err != nil {
+	// 		return fmt.Errorf("failed to start machine: %v", err)
+	// 	}
+
+	// 	out <- machine
+
+	// 	return nil
+	// })
+
+	// m := <-out
+
+	// defer m.StopVMM()
+
+	// if g.Wait() != nil {
+	// 	log.Fatalf("error during start and create vm %v", g.Wait())
+	// }
+
+	// go func() {
+	// 	m.Wait(ctx)
+	// }()
 
 	installSignalHandlers(vmCtx, m)
 
@@ -93,9 +95,11 @@ func (o *options) createVMM(ctx context.Context, id string) (*Firecracker, error
 	// }
 
 	res := &Firecracker{
-		ctx:       vmCtx,
-		cancelCtx: vmCancel,
-		machine:   m,
+		ctx:  vmCtx,
+		Name: o.ProvidedImage,
+		// cancelCtx: vmCancel,
+		vm:    m,
+		state: StateCreated,
 	}
 
 	return res, nil
