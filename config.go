@@ -26,10 +26,10 @@ func getOptions(id byte, req CreateRequest) options {
 		Tap:            fmt.Sprintf("fc-tap-%d", id),
 		FcIP:           fc_ip,
 		BackBone:       "enp0s25", // eth0 or enp7s0,enp0s25
-		ApiSocket:      fmt.Sprintf("/tmp/firecracker-%d.sock", id),
-		FcCPUCount:     1,
-		FcMemSz:        256,
-		Logger:         log.New(),
+		// ApiSocket:      fmt.Sprintf("/tmp/firecracker-%d.sock", id),
+		FcCPUCount: 1,
+		FcMemSz:    256,
+		Logger:     log.New(),
 	}
 }
 
