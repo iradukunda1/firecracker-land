@@ -61,3 +61,14 @@ tasks:
       - rm -rf tmp
       - rm -rf initrd
       - echo "Done!"
+  all:
+    desc: "Builds the firecracker-land binary, pulls the kernel, builds the init binary, and generates the initrd"
+    cmds:
+      - task clean
+      - go mod download
+      - task pull-kernel
+      - task gen-init
+      - task gen-initrd
+      - task build
+      - task run
+      - echo "Running firecracker-land binary..."

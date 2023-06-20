@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	lgg "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -23,6 +24,7 @@ func main() {
 	lg.SetLevel(lgg.DebugLevel)
 
 	r := chi.NewMux()
+	r.Use(corsHandler)
 	r.Use(middleware.Recoverer)
 	r.Use(includeLogger(lg))
 	r.Mount("/api", handler())
@@ -82,3 +84,12 @@ func includeLogger(lg *lgg.Logger) Middleware {
 		return http.HandlerFunc(f)
 	}
 }
+
+var corsHandler = cors.Handler(cors.Options{
+	AllowedOrigins:   []string{"*"},
+	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+	ExposedHeaders:   []string{"Link"},
+	AllowCredentials: false,
+	MaxAge:           300,
+})
