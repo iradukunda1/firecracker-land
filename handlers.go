@@ -34,10 +34,6 @@ func CreateVmHandler(w http.ResponseWriter, r *http.Request) {
 
 	opts := getOptions(ipByte, *in)
 
-	// vmm := make(chan *Firecracker)
-
-	// go func() {
-
 	opts.RootFsImage, err = opts.GenerateRFs(in.Name)
 	if err != nil {
 		fmt.Printf("failed to generate rootfs image, %s", err)
@@ -49,11 +45,6 @@ func CreateVmHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("failed to start and create vm %v", err)
 		return
 	}
-
-	// vmm <- res
-	// }()
-
-	// m := <-vmm
 
 	resp := CreateResponse{
 		Name:   in.Name,
@@ -70,14 +61,11 @@ func CreateVmHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.Write(response)
 
-	// go func() {
 	m, err = StartVm(m)
 	if err != nil {
 		fmt.Printf("failed to start vm, %s", err)
 		return
 	}
-
-	// }()
 
 	runVms[id] = m
 

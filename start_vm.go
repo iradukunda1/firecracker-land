@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 )
 
 // StartVm is responsible to start vm
 func StartVm(m *Firecracker) (*Firecracker, error) {
 
-	// if m.state != StateCreated && m.vm != nil {
-	if err := m.vm.Start(m.ctx); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := m.vm.Start(ctx); err != nil {
 
 		m.state = StateFailed
 
@@ -17,11 +20,11 @@ func StartVm(m *Firecracker) (*Firecracker, error) {
 	defer m.vm.StopVMM()
 
 	go func() {
-		m.vm.Wait(m.ctx)
+		m.vm.Wait(ctx)
 	}()
 
 	m.state = StateStarted
-	// }
+	m.cancelCtx = cancel
 
 	return m, nil
 }
