@@ -1,0 +1,28 @@
+#Cloud-Config
+
+runcmd:
+  # install docker
+  - curl -fsSL https://get.docker.com | sh
+  # install git
+  - add-apt-repository ppa:git-core/ppa --yes --update && apt-get install git --yes
+  # install go
+  - curl -O https://storage.googleapis.com/golang/go1.20.1.linux-amd64.tar.gz
+  - tar -xvf go1.20.1.linux-amd64.tar.gz
+  - sudo mv go /usr/local
+  - export GOROOT=/usr/local/go
+  - export GOPATH=$HOME/go
+  - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+  # install rust with cargo
+  - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  - source $HOME/.cargo/env
+  # install firecracker
+  - git clone https://github.com/firecracker-microvm/firecracker
+  - ARCH="$(uname -m)"
+  - sudo ./firecracker/tools/devtool build
+  - sudo cp ./firecracker/build/cargo_target/${x86_64}-unknown-linux-musl/debug/firecracker /usr/bin
+  - sudo cp ./firecracker/build/cargo_target/${x86_64}-unknown-linux-musl/debug/jailer /usr/bin
+  # curl install tasks
+  -  sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+  # clone firecracker-land
+  - git clone https://github.com/iradukunda1/firecracker-land
+  - task all -d firecracker-land
